@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import QRCode from 'react-qr-code';
 
 interface User {
   email?: string;
@@ -18,6 +19,7 @@ interface Seminar {
   capacity: number;
   price: number;
   attendees: string[];
+  qrCode?: string;
 }
 
 export default function AgentDashboard() {
@@ -133,6 +135,52 @@ export default function AgentDashboard() {
       } catch (error) {
         console.error('Error deleting seminar:', error);
         alert('An error occurred while deleting the seminar');
+      }
+    }
+  };
+
+  const generateQRCode = async (seminarId: string) => {
+    const registrationUrl = `${window.location.origin}/register/${seminarId}`;
+    try {
+      const response = await fetch(`/api/seminars/${seminarId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrCode: registrationUrl }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        console.log('QR code generated successfully:', result);
+        fetchSeminars(); // Refresh the seminars list to show the updated QR code
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to save QR code. Server response:', errorText);
+        alert(`Failed to save QR code. Status: ${response.status}. ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error saving QR code:', error);
+      alert('An error occurred while saving the QR code');
+    }
+  };
+
+  const deleteQRCode = async (seminarId: string) => {
+    if (confirm('Are you sure you want to delete the QR code for this seminar?')) {
+      try {
+        const response = await fetch(`/api/seminars/${seminarId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: null }),
+        });
+        if (response.ok) {
+          console.log('QR code deleted successfully');
+          fetchSeminars(); // Refresh the seminars list
+        } else {
+          const errorText = await response.text();
+          console.error('Failed to delete QR code. Server response:', errorText);
+          alert(`Failed to delete QR code. Status: ${response.status}. ${errorText}`);
+        }
+      } catch (error) {
+        console.error('Error deleting QR code:', error);
+        alert('An error occurred while deleting the QR code');
       }
     }
   };
@@ -259,10 +307,31 @@ export default function AgentDashboard() {
                 <p>Price: ${seminar.price.toFixed(2)}</p>
                 <button
                   onClick={() => handleDeleteSeminar(seminar._id)}
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mt-2"
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mt-2 mr-2"
                 >
                   Delete
                 </button>
+                {seminar.qrCode ? (
+                  <div className="mt-4 p-4 border rounded">
+                    <h3 className="text-lg font-semibold mb-2">QR Code for Registration</h3>
+                    <QRCode value={seminar.qrCode} size={150} />
+                    <p className="mt-2 text-sm">Scan this QR code to register for the seminar</p>
+                    <p className="text-xs text-gray-600 break-all">{seminar.qrCode}</p>
+                    <button
+                      onClick={() => deleteQRCode(seminar._id)}
+                      className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded mt-2"
+                    >
+                      Delete QR Code
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => generateQRCode(seminar._id)}
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded mt-2"
+                  >
+                    Generate QR Code
+                  </button>
+                )}
               </li>
             ))}
           </ul>

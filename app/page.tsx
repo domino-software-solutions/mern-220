@@ -1,40 +1,22 @@
-import { getClientPromise } from '../lib/mongodb';
 import Link from 'next/link';
 
-const dbName = process.env.MONGODB_DB_NAME || "mern-220";
-
-// Add this function to fetch users
-async function getUsers() {
-  try {
-    const clientPromise = await getClientPromise();
-    const client = await clientPromise;
-    const db = client.db(dbName);
-    const users = await db.collection("users").find({}).toArray();
-    return users;
-  } catch (e) {
-    console.error(e);
-    throw new Error('Failed to fetch users');
-  }
-}
-
-// Export a React component as the default export
-export default async function Home() {
-  const users = await getUsers();
-  
+export default function Home() {
   return (
-    <div>
-      <h1>Users</h1>
-      <Link href="/signup">Sign Up</Link>
-      <ul>
-        {users.map((user: User) => (
-          <li key={user._id}>{user.name}</li>
-        ))}
-      </ul>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <h1 className="text-6xl font-bold mb-6 tracking-tight">Seminar Crowds RSVP</h1>
+        <p className="text-2xl mb-12 text-gray-600">
+          Streamline your insurance event management with our easy-to-use RSVP system.
+        </p>
+        <div className="space-x-6">
+          <Link href="/login" className="bg-black text-white py-3 px-8 text-lg font-semibold uppercase tracking-wider hover:bg-gray-800 transition-colors duration-300">
+            Login
+          </Link>
+          <Link href="/signup" className="bg-white text-black py-3 px-8 text-lg font-semibold uppercase tracking-wider border-2 border-black hover:bg-gray-100 transition-colors duration-300">
+            Sign Up
+          </Link>
+        </div>
+      </div>
     </div>
   );
-}
-
-interface User {
-  _id: string;
-  name: string;
 }

@@ -8,6 +8,7 @@ class User {
     this.name = data.name;
     this.email = data.email;
     this.password = data.password;
+    this.role = data.role || "attendee"; // Default role is attendee
     this.createdAt = data.createdAt || new Date();
   }
 

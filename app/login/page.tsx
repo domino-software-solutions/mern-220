@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaSignInAlt, FaEnvelope, FaLock } from 'react-icons/fa';
+import { useUser } from '../contexts/UserContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { setUser } = useUser();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ export default function Login() {
 
       if (response.ok) {
         const data = await response.json();
+        setUser({ isLoggedIn: true, role: data.role, name: data.name });
         switch (data.role) {
           case 'admin':
             router.push('/admin/dashboard');

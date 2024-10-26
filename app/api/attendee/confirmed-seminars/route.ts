@@ -12,15 +12,15 @@ async function handler(req: NextRequest & { user: { userId: string } }) {
     const seminarsCollection = db.collection('seminars');
     const userId = req.user.userId;
 
-    const invitations = await seminarsCollection.find(
-      { invitees: userId },
+    const confirmedSeminars = await seminarsCollection.find(
+      { attendees: userId },
       { projection: { title: 1, date: 1, time: 1 } }
     ).toArray();
 
-    return NextResponse.json(invitations);
+    return NextResponse.json(confirmedSeminars);
   } catch (error) {
-    console.error('Error fetching invitations:', error);
-    return NextResponse.json({ error: 'Failed to fetch invitations' }, { status: 500 });
+    console.error('Error fetching confirmed seminars:', error);
+    return NextResponse.json({ error: 'Failed to fetch confirmed seminars' }, { status: 500 });
   }
 }
 

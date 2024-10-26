@@ -10,58 +10,53 @@ interface Invitation {
   time: string;
 }
 
-interface ConfirmedSeminar {
-  _id: string;
-  title: string;
-  date: string;
-  time: string;
-}
-
-export default function AttendeeDashboard() {
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [confirmedSeminars, setConfirmedSeminars] = useState<ConfirmedSeminar[]>([]);
+export default function AttendeeInvitations() {
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
+  const [confirmedRSVPs, setConfirmedRSVPs] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInvitations = async () => {
       try {
-        const [invitationsResponse, confirmedSeminarsResponse] = await Promise.all([
+        const [pendingResponse, confirmedResponse] = await Promise.all([
           fetch('/api/invitations'),
           fetch('/api/attendee/confirmed-seminars')
         ]);
 
-        if (invitationsResponse.ok && confirmedSeminarsResponse.ok) {
-          const [invitationsData, confirmedSeminarsData] = await Promise.all([
-            invitationsResponse.json(),
-            confirmedSeminarsResponse.json()
-          ]);
-          setInvitations(invitationsData);
-          setConfirmedSeminars(confirmedSeminarsData);
-        } else {
-          console.error('Failed to fetch data');
+        if (!pendingResponse.ok || !confirmedResponse.ok) {
+          throw new Error('Failed to fetch invitations or confirmed RSVPs');
         }
+
+        const [pendingData, confirmedData] = await Promise.all([
+          pendingResponse.json(),
+          confirmedResponse.json()
+        ]);
+
+        setPendingInvitations(pendingData);
+        setConfirmedRSVPs(confirmedData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching invitations:', error);
+        setError('Failed to fetch invitations. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchInvitations();
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="container mx-auto mt-10 p-5">
-      <h1 className="text-3xl font-bold mb-5">Attendee Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-5">Your Invitations</h1>
       
-      <h2 className="text-2xl font-semibold mb-3">Your Invitations:</h2>
-      {invitations.length > 0 ? (
+      <h2 className="text-2xl font-semibold mb-3">Pending Invitations:</h2>
+      {pendingInvitations.length > 0 ? (
         <ul className="space-y-4 mb-8">
-          {invitations.map((invitation) => (
+          {pendingInvitations.map((invitation) => (
             <li key={invitation._id} className="bg-white shadow rounded-lg p-4">
               <h3 className="text-xl font-semibold">{invitation.title}</h3>
               <p>Date: {invitation.date}</p>
@@ -76,10 +71,10 @@ export default function AttendeeDashboard() {
         <p className="mb-8">You have no pending invitations.</p>
       )}
 
-      <h2 className="text-2xl font-semibold mb-3">Your Confirmed Seminars:</h2>
-      {confirmedSeminars.length > 0 ? (
+      <h2 className="text-2xl font-semibold mb-3">Confirmed RSVPs:</h2>
+      {confirmedRSVPs.length > 0 ? (
         <ul className="space-y-4">
-          {confirmedSeminars.map((seminar) => (
+          {confirmedRSVPs.map((seminar) => (
             <li key={seminar._id} className="bg-white shadow rounded-lg p-4">
               <h3 className="text-xl font-semibold">{seminar.title}</h3>
               <p>Date: {seminar.date}</p>
@@ -88,7 +83,7 @@ export default function AttendeeDashboard() {
           ))}
         </ul>
       ) : (
-        <p>You have no confirmed seminars.</p>
+        <p>You have no confirmed RSVPs.</p>
       )}
     </div>
   );

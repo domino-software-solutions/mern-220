@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface Invitation {
   _id: string;
@@ -11,13 +11,12 @@ interface Invitation {
   description: string;
 }
 
-export default function InvitationDetails() {
+export default function InvitationDetails({ params }: { params: { id: string } }) {
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [rsvpStatus, setRsvpStatus] = useState<'pending' | 'accepted' | 'declined'>('pending');
   const router = useRouter();
-  const params = useParams();
-  const id = params.id as string;
+  const { id } = params;
 
   useEffect(() => {
     const fetchInvitationDetails = async () => {
@@ -52,7 +51,7 @@ export default function InvitationDetails() {
       if (apiResponse.ok) {
         setRsvpStatus(response === 'accept' ? 'accepted' : 'declined');
         alert(`You have ${response}ed the invitation.`);
-        router.push('/attendee/dashboard');
+        router.push('/api/attendee/dashboard');
       } else {
         console.error('RSVP error:', data);
         alert(data.error || 'Failed to process RSVP');

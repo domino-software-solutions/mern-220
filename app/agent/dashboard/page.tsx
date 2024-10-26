@@ -118,6 +118,25 @@ export default function AgentDashboard() {
     }
   };
 
+  const handleDeleteSeminar = async (seminarId: string) => {
+    if (confirm('Are you sure you want to delete this seminar?')) {
+      try {
+        const response = await fetch(`/api/seminars/${seminarId}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          fetchSeminars(); // Refresh the seminars list
+        } else {
+          const errorData = await response.json();
+          alert(errorData.error || 'Failed to delete seminar');
+        }
+      } catch (error) {
+        console.error('Error deleting seminar:', error);
+        alert('An error occurred while deleting the seminar');
+      }
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -235,8 +254,15 @@ export default function AgentDashboard() {
                 <h3 className="font-semibold">{seminar.title}</h3>
                 <p>Date: {new Date(seminar.date).toLocaleDateString()}</p>
                 <p>Time: {seminar.time}</p>
+                <p>Description: {seminar.description}</p>
                 <p>Attendees: {seminar.attendees.length} / {seminar.capacity}</p>
                 <p>Price: ${seminar.price.toFixed(2)}</p>
+                <button
+                  onClick={() => handleDeleteSeminar(seminar._id)}
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mt-2"
+                >
+                  Delete
+                </button>
               </li>
             ))}
           </ul>

@@ -7,16 +7,25 @@ import LogoutButton from './LogoutButton';
 
 export default function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/user');
-        setIsLoggedIn(response.ok);
+        if (response.ok) {
+          const data = await response.json();
+          setIsLoggedIn(true);
+          setUserRole(data.user.role);
+        } else {
+          setIsLoggedIn(false);
+          setUserRole(null);
+        }
       } catch (error) {
         console.error('Error checking authentication:', error);
         setIsLoggedIn(false);
+        setUserRole(null);
       }
     };
 
@@ -32,7 +41,15 @@ export default function Navigation() {
         <div className="space-x-4">
           {isLoggedIn ? (
             <>
-              <Link href="/dashboard" className="hover:text-gray-300">Dashboard</Link>
+              {userRole === 'admin' && (
+                <Link href="/admin/dashboard" className="hover:text-gray-300">Admin Dashboard</Link>
+              )}
+              {userRole === 'agent' && (
+                <Link href="/agent/dashboard" className="hover:text-gray-300">Agent Dashboard</Link>
+              )}
+              {userRole === 'attendee' && (
+                <Link href="/attendee/dashboard" className="hover:text-gray-300">My Events</Link>
+              )}
               <LogoutButton />
             </>
           ) : (

@@ -22,25 +22,29 @@ export async function POST(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db(dbName);
 
-    // Check if user already exists
-    const existingUser = await db.collection("users").findOne({ email });
-    if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
-    }
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user
-    const result = await db.collection("users").insertOne({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      createdAt: new Date()
-    });
-
-    return NextResponse.json({ message: 'User created successfully', userId: result.insertedId }, { status: 201 });
+    if (role === 'agent') {
+      // Create a pending agent application
+      await db.collection("agentApplications").insertOne({
+        name,
+        email,
+        password: hashedPassword,
+        status: 'pending',
+        createdAt: new Date()
+      });
+      return NextResponse.json({ message: 'Agent application submitted for review' }, { status: 201 });
+    } else {
+      // Insert new user for attendees
+      const result = await db.collection("users").insertOne({
+        name,
+        email,
+        password: hashedPassword,
+        role,
+        createdAt: new Date()
+      });
+      return NextResponse.json({ message: 'User created successfully', userId: result.insertedId }, { status: 201 });
+    }
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });

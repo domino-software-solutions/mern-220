@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
       userId: user._id, 
       email: user.email, 
       firstName: user.firstName,
-      role: user.role // Include the role in the token
+      role: user.role
     }, JWT_SECRET, { expiresIn: '1h' });
 
-    const response = NextResponse.json({ message: 'Login successful' }, { status: 200 });
+    const response = NextResponse.json({ message: 'Login successful', role: user.role }, { status: 200 });
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',

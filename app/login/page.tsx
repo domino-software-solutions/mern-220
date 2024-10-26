@@ -21,7 +21,20 @@ export default function Login() {
       });
 
       if (response.ok) {
-        router.push('/dashboard');
+        const data = await response.json();
+        switch (data.role) {
+          case 'admin':
+            router.push('/admin/dashboard');
+            break;
+          case 'agent':
+            router.push('/agent/dashboard');
+            break;
+          case 'attendee':
+            router.push('/attendee/dashboard');
+            break;
+          default:
+            router.push('/dashboard');
+        }
       } else {
         const data = await response.json();
         setError(data.error || 'An error occurred during login');

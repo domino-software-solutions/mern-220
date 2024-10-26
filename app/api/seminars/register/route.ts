@@ -32,6 +32,7 @@ async function handler(req: NextRequest) {
 
     const db = await getDatabase();
     const seminarsCollection = db.collection('seminars');
+    const usersCollection = db.collection('users');
 
     const seminar = await seminarsCollection.findOne({ _id: new ObjectId(seminarId) });
 
@@ -47,9 +48,26 @@ async function handler(req: NextRequest) {
       return NextResponse.json({ error: 'Already registered for this seminar' }, { status: 400 });
     }
 
-    await seminarsCollection.updateOne(
+    // Check if the user is invited or if the seminar is open for public registration
+    if (seminar.invitees.length > 0 && !seminar.invitees.includes(attendeeId)) {
+      return NextResponse.json({ error: 'You are not invited to this seminar' }, { status: 403 });
+    }
+
+    const updateResult = await seminarsCollection.updateOne(
       { _id: new ObjectId(seminarId) },
-      { $push: { attendees: attendeeId } }
+      { 
+        $addToSet: { attendees: attendeeId },
+        $pull: { invitees: attendeeId }
+      }
+    );
+
+    if (updateResult.modifiedCount === 0) {
+      return NextResponse.json({ error: 'Registration failed' }, { status: 400 });
+    }
+
+    await usersCollection.updateOne(
+      { _id: new ObjectId(attendeeId) },
+      { $addToSet: { registeredSeminars: new ObjectId(seminarId) } }
     );
 
     return NextResponse.json({ message: 'Successfully registered for seminar' }, { status: 200 });

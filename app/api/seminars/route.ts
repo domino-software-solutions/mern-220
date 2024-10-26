@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { withAuth } from '@/middleware/authMiddleware';
+import Seminar from '@/app/models/Seminar';
 
 async function handler(req: NextRequest) {
   const db = await getDatabase();
@@ -9,7 +10,7 @@ async function handler(req: NextRequest) {
 
   if (req.method === 'POST') {
     try {
-      const { title, date, time, description, capacity, price } = await req.json();
+      const { title, date, time, description, capacity, price, invitees } = await req.json();
       
       // Parse capacity and price as numbers
       const parsedCapacity = parseInt(capacity, 10);
@@ -39,17 +40,16 @@ async function handler(req: NextRequest) {
         return NextResponse.json({ error: 'User ID is missing from the token' }, { status: 401 });
       }
 
-      const newSeminar = {
+      const newSeminar = new Seminar({
         title,
         date,
         time,
         description,
         capacity: parsedCapacity,
         price: parsedPrice,
-        agentId: new ObjectId(agentId),
-        attendees: [],
-        createdAt: new Date(),
-      };
+        agentId: new ObjectId(agentId).toString(),
+        invitees: invitees || [],
+      });
 
       const result = await seminarsCollection.insertOne(newSeminar);
       return NextResponse.json({ message: 'Seminar created successfully', seminarId: result.insertedId }, { status: 201 });

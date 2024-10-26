@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCode from 'react-qr-code';
+import InvitationForm from '../../components/InvitationForm';
 
 interface User {
   email?: string;
@@ -185,6 +186,26 @@ export default function AgentDashboard() {
     }
   };
 
+  const handleSendInvitations = async (seminarId: string, attendeeEmails: string[]) => {
+    try {
+      const response = await fetch('/api/invitations/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seminarId, attendeeEmails }),
+      });
+
+      if (response.ok) {
+        alert('Invitations sent successfully');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to send invitations');
+      }
+    } catch (error) {
+      console.error('Error sending invitations:', error);
+      alert('An error occurred while sending invitations');
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -332,6 +353,7 @@ export default function AgentDashboard() {
                     Generate QR Code
                   </button>
                 )}
+                <InvitationForm seminarId={seminar._id} onSendInvitations={handleSendInvitations} />
               </li>
             ))}
           </ul>

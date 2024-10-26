@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FaSignInAlt, FaSignOutAlt, FaCalendarCheck } from 'react-icons/fa';
+import { FaSignInAlt, FaSignOutAlt, FaCalendarCheck, FaEnvelope } from 'react-icons/fa';
 import { useUser } from '../../contexts/UserContext';
 
 const Hero = () => {
   const router = useRouter();
   const { user, setUser } = useUser();
+  const [showInvitations, setShowInvitations] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -21,6 +23,10 @@ const Hero = () => {
     } catch (error) {
       console.error('Error during logout:', error);
     }
+  };
+
+  const toggleInvitations = () => {
+    setShowInvitations(!showInvitations);
   };
 
   return (
@@ -55,6 +61,13 @@ const Hero = () => {
                 View Seminar Details
                 <span className="ml-2 group-hover:ml-4 transition-all duration-300">&rarr;</span>
               </Link>
+              {user.role === 'attendee' && (
+                <button onClick={toggleInvitations} className="group flex items-center bg-teal-500 text-white py-3 px-5 text-base font-semibold rounded-full hover:bg-teal-600 transition-all duration-300 w-full sm:w-auto">
+                  <FaEnvelope className="mr-2" />
+                  {showInvitations ? 'Hide Invitations' : 'View Invitations'}
+                  <span className="ml-2 group-hover:ml-4 transition-all duration-300">&rarr;</span>
+                </button>
+              )}
               <button onClick={handleLogout} className="group flex items-center bg-transparent text-white py-3 px-5 text-base font-semibold rounded-full border-2 border-white hover:bg-white hover:text-indigo-700 transition-all duration-300 w-full sm:w-auto">
                 <FaSignOutAlt className="mr-2" />
                 Logout
@@ -75,6 +88,14 @@ const Hero = () => {
             </>
           )}
         </div>
+        {showInvitations && user.role === 'attendee' && (
+          <div className="mt-8 bg-white bg-opacity-10 p-6 rounded-xl backdrop-filter backdrop-blur-lg">
+            <h3 className="text-2xl font-bold mb-4">Your Invitations</h3>
+            <Link href="/attendee/invitations" className="bg-indigo-500 text-white py-2 px-4 rounded-full hover:bg-indigo-600 transition-all duration-300">
+              View and Respond to Invitations
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

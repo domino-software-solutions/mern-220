@@ -10,6 +10,15 @@ async function handler(req: NextRequest) {
   if (req.method === 'POST') {
     try {
       const { title, date, time, description, capacity, price } = await req.json();
+      
+      // Parse capacity and price as numbers
+      const parsedCapacity = parseInt(capacity, 10);
+      const parsedPrice = parseFloat(price);
+
+      if (isNaN(parsedCapacity) || isNaN(parsedPrice)) {
+        return NextResponse.json({ error: 'Invalid capacity or price' }, { status: 400 });
+      }
+
       const token = req.cookies.get('token')?.value;
       
       if (!token) {
@@ -35,8 +44,8 @@ async function handler(req: NextRequest) {
         date,
         time,
         description,
-        capacity,
-        price,
+        capacity: parsedCapacity,
+        price: parsedPrice,
         agentId: new ObjectId(agentId),
         attendees: [],
         createdAt: new Date(),

@@ -29,8 +29,8 @@ export default function AgentDashboard() {
     date: '',
     time: '',
     description: '',
-    capacity: 0,
-    price: 0,
+    capacity: '',
+    price: '',
   });
   const router = useRouter();
 
@@ -60,33 +60,61 @@ export default function AgentDashboard() {
       if (response.ok) {
         const data = await response.json();
         setSeminars(data);
+      } else {
+        console.error('Failed to fetch seminars:', await response.text());
       }
     } catch (error) {
       console.error('Error fetching seminars:', error);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewSeminar(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleCreateSeminar = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const formattedSeminar = {
+        ...newSeminar,
+        capacity: parseInt(newSeminar.capacity, 10),
+        price: parseFloat(newSeminar.price)
+      };
+
+      if (isNaN(formattedSeminar.capacity) || isNaN(formattedSeminar.price)) {
+        alert('Please enter valid numbers for capacity and price.');
+        return;
+      }
+
       const response = await fetch('/api/seminars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSeminar),
+        body: JSON.stringify(formattedSeminar),
       });
       if (response.ok) {
+        const data = await response.json();
+        console.log('Seminar created:', data);
         setNewSeminar({
           title: '',
           date: '',
           time: '',
           description: '',
-          capacity: 0,
-          price: 0,
+          capacity: '',
+          price: '',
         });
         fetchSeminars();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to create seminar:', errorData);
+        alert(errorData.error || 'Failed to create seminar');
       }
     } catch (error) {
       console.error('Error creating seminar:', error);
+      alert('An error occurred while creating the seminar');
     }
   };
 
@@ -102,24 +130,119 @@ export default function AgentDashboard() {
         
         <h2 className="text-xl font-semibold mb-3">Create New Seminar</h2>
         <form onSubmit={handleCreateSeminar} className="mb-6">
-          {/* Add form inputs for newSeminar fields */}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
+              Title
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="title"
+              type="text"
+              name="title"
+              value={newSeminar.title}
+              onChange={handleInputChange}
+              required
+              placeholder="Enter seminar title"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date">
+              Date
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="date"
+              type="date"
+              name="date"
+              value={newSeminar.date}
+              onChange={handleInputChange}
+              required
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="time">
+              Time
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="time"
+              type="time"
+              name="time"
+              value={newSeminar.time}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+              Description
+            </label>
+            <textarea
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="description"
+              name="description"
+              value={newSeminar.description}
+              onChange={handleInputChange}
+              required
+              placeholder="Enter seminar description"
+              rows={4}
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="capacity">
+              Capacity
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="capacity"
+              type="number"
+              name="capacity"
+              value={newSeminar.capacity}
+              onChange={handleInputChange}
+              required
+              min="1"
+              placeholder="Enter seminar capacity"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="price">
+              Price ($)
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="price"
+              type="number"
+              name="price"
+              step="0.01"
+              value={newSeminar.price}
+              onChange={handleInputChange}
+              required
+              min="0"
+              placeholder="Enter seminar price"
+            />
+          </div>
           <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
             Create Seminar
           </button>
         </form>
 
         <h2 className="text-xl font-semibold mb-3">Your Seminars:</h2>
-        <ul className="mb-4">
-          {seminars.map((seminar) => (
-            <li key={seminar._id} className="mb-2 p-2 border rounded">
-              <h3 className="font-semibold">{seminar.title}</h3>
-              <p>Date: {seminar.date}</p>
-              <p>Time: {seminar.time}</p>
-              <p>Attendees: {seminar.attendees.length} / {seminar.capacity}</p>
-              <p>Price: ${seminar.price}</p>
-            </li>
-          ))}
-        </ul>
+        {seminars.length > 0 ? (
+          <ul className="mb-4">
+            {seminars.map((seminar) => (
+              <li key={seminar._id} className="mb-2 p-2 border rounded">
+                <h3 className="font-semibold">{seminar.title}</h3>
+                <p>Date: {new Date(seminar.date).toLocaleDateString()}</p>
+                <p>Time: {seminar.time}</p>
+                <p>Attendees: {seminar.attendees.length} / {seminar.capacity}</p>
+                <p>Price: ${seminar.price.toFixed(2)}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No seminars found. Create your first seminar above!</p>
+        )}
       </div>
     </div>
   );

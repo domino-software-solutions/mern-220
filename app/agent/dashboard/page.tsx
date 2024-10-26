@@ -10,17 +10,28 @@ interface User {
 }
 
 interface Seminar {
-  id: string;
+  _id: string;
   title: string;
   date: string;
   time: string;
-  attendees: number;
+  description: string;
+  capacity: number;
+  price: number;
+  attendees: string[];
 }
 
 export default function AgentDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [seminars, setSeminars] = useState<Seminar[]>([]);
+  const [newSeminar, setNewSeminar] = useState({
+    title: '',
+    date: '',
+    time: '',
+    description: '',
+    capacity: 0,
+    price: 0,
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -35,12 +46,7 @@ export default function AgentDashboard() {
         } else {
           setUser(userData.user);
           setLoading(false);
-          // Fetch seminars data here
-          // For now, we'll use mock data
-          setSeminars([
-            { id: '1', title: 'Understanding Life Insurance', date: '2023-07-15', time: '14:00', attendees: 25 },
-            { id: '2', title: 'Retirement Planning 101', date: '2023-07-22', time: '15:00', attendees: 30 },
-          ]);
+          fetchSeminars();
         }
       }
     };
@@ -48,9 +54,40 @@ export default function AgentDashboard() {
     checkAuth();
   }, [router]);
 
-  const handleCreateSeminar = () => {
-    // Implement seminar creation logic
-    console.log('Create new seminar');
+  const fetchSeminars = async () => {
+    try {
+      const response = await fetch('/api/seminars');
+      if (response.ok) {
+        const data = await response.json();
+        setSeminars(data);
+      }
+    } catch (error) {
+      console.error('Error fetching seminars:', error);
+    }
+  };
+
+  const handleCreateSeminar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/seminars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSeminar),
+      });
+      if (response.ok) {
+        setNewSeminar({
+          title: '',
+          date: '',
+          time: '',
+          description: '',
+          capacity: 0,
+          price: 0,
+        });
+        fetchSeminars();
+      }
+    } catch (error) {
+      console.error('Error creating seminar:', error);
+    }
   };
 
   if (loading) {
@@ -62,23 +99,27 @@ export default function AgentDashboard() {
       <h1 className="text-3xl font-bold mb-5">Agent Dashboard</h1>
       <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         <p className="mb-4">Welcome, {user?.name || user?.email || 'Agent'}!</p>
-        <h2 className="text-xl font-semibold mb-3">Your Upcoming Seminars:</h2>
+        
+        <h2 className="text-xl font-semibold mb-3">Create New Seminar</h2>
+        <form onSubmit={handleCreateSeminar} className="mb-6">
+          {/* Add form inputs for newSeminar fields */}
+          <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Create Seminar
+          </button>
+        </form>
+
+        <h2 className="text-xl font-semibold mb-3">Your Seminars:</h2>
         <ul className="mb-4">
           {seminars.map((seminar) => (
-            <li key={seminar.id} className="mb-2 p-2 border rounded">
+            <li key={seminar._id} className="mb-2 p-2 border rounded">
               <h3 className="font-semibold">{seminar.title}</h3>
               <p>Date: {seminar.date}</p>
               <p>Time: {seminar.time}</p>
-              <p>Attendees: {seminar.attendees}</p>
+              <p>Attendees: {seminar.attendees.length} / {seminar.capacity}</p>
+              <p>Price: ${seminar.price}</p>
             </li>
           ))}
         </ul>
-        <button
-          onClick={handleCreateSeminar}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        >
-          Create New Seminar
-        </button>
       </div>
     </div>
   );

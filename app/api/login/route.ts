@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const user = await db.collection("users").findOne({ email });
 
+    console.log('Found user:', user); // Add this debug line
+
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
@@ -25,25 +27,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Create token with all necessary user info
     const token = jwt.sign({ 
-      userId: user._id, 
-      email: user.email, 
-      firstName: user.firstName,
+      userId: user._id.toString(),
+      email: user.email,
+      name: user.name,
       role: user.role
     }, JWT_SECRET, { expiresIn: '1h' });
 
-    const response = NextResponse.json({ message: 'Login successful', role: user.role }, { status: 200 });
+    const response = NextResponse.json({ 
+      message: 'Login successful',
+      role: user.role,
+      name: user.name, // Ensure this is being sent
+      email: user.email
+    }, { status: 200 });
+
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
       sameSite: 'strict',
-      maxAge: 3600, // 1 hour
+      maxAge: 3600,
       path: '/',
     });
 
     return response;
   } catch (e) {
-    console.error(e);
+    console.error('Login error:', e);
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

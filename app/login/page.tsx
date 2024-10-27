@@ -25,7 +25,14 @@ export default function Login() {
 
       if (response.ok) {
         const data = await response.json();
-        setUser({ isLoggedIn: true, role: data.role, name: data.name });
+        console.log('Login response data:', data); // Add this line
+        
+        setUser({ 
+          isLoggedIn: true, 
+          role: data.role, 
+          name: data.name || '' // Ensure name is set even if undefined
+        });
+        
         switch (data.role) {
           case 'admin':
             router.push('/admin/dashboard');

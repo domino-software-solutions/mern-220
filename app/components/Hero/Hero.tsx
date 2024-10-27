@@ -97,7 +97,9 @@ const Hero = () => {
           Seminar Crowds RSVP
         </h1>
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-200 to-cyan-400 py-2">
-          {user.isLoggedIn ? `Welcome, ${user.role}!` : 'Register for Your Exclusive Seminar'}
+          {user.isLoggedIn 
+            ? `Welcome, ${user.name && user.name.trim() !== '' ? user.name : 'User'}!` 
+            : 'Register for Your Exclusive Seminar'}
         </h2>
         <p className="text-lg sm:text-xl max-w-2xl mx-auto text-gray-200">
           {user.isLoggedIn
@@ -120,7 +122,7 @@ const Hero = () => {
                 ) : (
                   <>
                     <FaCalendarCheck className="mr-2" />
-                    {user.role === 'agent' ? 'View My Agent Seminar Dashboard' : 'View My Seminar Dashboard'}
+                    My Events
                     <span className="ml-2 group-hover:ml-4 transition-all duration-300">&rarr;</span>
                   </>
                 )}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface User {
   isLoggedIn: boolean;
@@ -10,44 +10,34 @@ interface User {
 
 interface UserContextType {
   user: User;
-  setUser: React.Dispatch<React.SetStateAction<User>>;
+  setUser: (user: User) => void;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const defaultUser: User = {
+  isLoggedIn: false,
+  role: null,
+  name: ''
+};
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User>({ isLoggedIn: false, role: null, name: '' });
+export const UserContext = createContext<UserContextType>({
+  user: defaultUser,
+  setUser: () => {}
+});
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/user');
-        if (response.ok) {
-          const data = await response.json();
-          setUser({ isLoggedIn: true, role: data.user.role, name: data.user.name });
-        } else {
-          setUser({ isLoggedIn: false, role: null, name: '' });
-        }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        setUser({ isLoggedIn: false, role: null, name: '' });
-      }
-    };
-
-    checkAuth();
-  }, []);
+export function UserProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User>(defaultUser);
 
   return (
     <UserContext.Provider value={{ user, setUser }}>
       {children}
     </UserContext.Provider>
   );
-};
+}
 
-export const useUser = () => {
+export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
-};
+}

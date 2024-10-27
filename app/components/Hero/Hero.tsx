@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaSignInAlt, FaSignOutAlt, FaCalendarCheck, FaEnvelope } from 'react-icons/fa';
+import { CgSpinner } from 'react-icons/cg';
 import { useUser } from '../../contexts/UserContext';
 
 interface Invitation {
@@ -18,6 +19,7 @@ const Hero = () => {
   const { user, setUser } = useUser();
   const [showInvitations, setShowInvitations] = useState(false);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user.isLoggedIn && user.role === 'attendee') {
@@ -68,6 +70,16 @@ const Hero = () => {
     setShowInvitations(!showInvitations);
   };
 
+  const handleDashboardNavigation = () => {
+    setIsLoading(true);
+    router.push(`/${user.role}/dashboard`);
+  };
+
+  const handleInvitationNavigation = (invitationId: string) => {
+    setIsLoading(true);
+    router.push(`/attendee/invitations/${invitationId}`);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-5 relative overflow-hidden">
       {/* Background Grid */}
@@ -95,11 +107,24 @@ const Hero = () => {
         <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-5">
           {user.isLoggedIn ? (
             <>
-              <Link href={`/${user.role}/dashboard`} className="group flex items-center bg-white text-indigo-700 py-3 px-5 text-base font-semibold rounded-full hover:bg-indigo-100 transition-all duration-300 w-full sm:w-auto">
-                <FaCalendarCheck className="mr-2" />
-                View Seminar Details
-                <span className="ml-2 group-hover:ml-4 transition-all duration-300">&rarr;</span>
-              </Link>
+              <button
+                onClick={handleDashboardNavigation}
+                disabled={isLoading}
+                className="group flex items-center bg-white text-indigo-700 py-3 px-5 text-base font-semibold rounded-full hover:bg-indigo-100 transition-all duration-300 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <CgSpinner className="animate-spin mr-2" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <FaCalendarCheck className="mr-2" />
+                    {user.role === 'agent' ? 'View My Agent Seminar Dashboard' : 'View My Seminar Dashboard'}
+                    <span className="ml-2 group-hover:ml-4 transition-all duration-300">&rarr;</span>
+                  </>
+                )}
+              </button>
               {user.role === 'attendee' && (
                 <div className="relative">
                   <button onClick={toggleInvitations} className="group flex items-center bg-teal-500 text-white py-3 px-5 text-base font-semibold rounded-full hover:bg-teal-600 transition-all duration-300 w-full sm:w-auto">
@@ -112,13 +137,14 @@ const Hero = () => {
                       <div className="py-1">
                         {invitations.length > 0 ? (
                           invitations.map((invitation) => (
-                            <Link 
+                            <button 
                               key={invitation._id} 
-                              href={`/attendee/invitations/${invitation._id}`}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => handleInvitationNavigation(invitation._id)}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              disabled={isLoading}
                             >
                               {invitation.title} - {invitation.date} {invitation.time}
-                            </Link>
+                            </button>
                           ))
                         ) : (
                           <p className="block px-4 py-2 text-sm text-gray-700">No current invitations</p>
@@ -149,6 +175,19 @@ const Hero = () => {
           )}
         </div>
       </div>
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
+            <div className="w-20 h-20 relative mb-4">
+              <div className="absolute top-0 left-0 w-full h-full border-4 border-indigo-200 rounded-full animate-pulse"></div>
+              <div className="absolute top-0 left-0 w-full h-full border-t-4 border-indigo-600 rounded-full animate-spin"></div>
+            </div>
+            <CgSpinner className="text-indigo-600 text-4xl animate-spin mb-3" />
+            <p className="text-gray-800 font-semibold text-lg">Loading your experience...</p>
+            <p className="text-gray-600 text-sm mt-2">This may take a few moments</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

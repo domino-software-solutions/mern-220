@@ -47,7 +47,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
       const updateResult = await seminarsCollection.updateOne(
         { _id: new ObjectId(seminarId) },
         { 
-          $addToSet: { attendees: attendeeId },
+          $addToSet: { attendees: attendeeId, confirmedAttendees: attendeeId },
           $pull: { invitees: attendeeId }
         }
       );

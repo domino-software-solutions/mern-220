@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { ObjectId, Collection } from 'mongodb';
 import { withAuth } from '@/middleware/authMiddleware';
 
 interface Seminar {
@@ -11,7 +11,14 @@ interface Seminar {
   description: string;
   capacity: number;
   attendees: string[];
+  confirmedAttendees: string[];
   // Add any other fields your seminar document has
+}
+
+interface Attendee {
+  _id: ObjectId;
+  name: string;
+  email: string;
 }
 
 async function handler(req: NextRequest) {
@@ -21,23 +28,26 @@ async function handler(req: NextRequest) {
 
   try {
     const db = await getDatabase();
-    const seminarsCollection = db.collection('seminars');
-    const usersCollection = db.collection('users');
+    const seminarsCollection: Collection<Seminar> = db.collection('seminars');
+    const usersCollection: Collection<Attendee> = db.collection('users');
 
-    const seminars = await seminarsCollection.find({}).toArray() as Seminar[];
+    const seminars = await seminarsCollection.find({}).toArray();
 
-    const seminarsWithAttendees = await Promise.all(seminars.map(async (seminar) => {
+    const seminarsWithAttendees = await Promise.all(seminars.map(async (seminar: Seminar) => {
       const attendeeIds = seminar.attendees || [];
       const attendees = attendeeIds.length > 0 
         ? await usersCollection.find(
-            { _id: { $in: attendeeIds.map(id => new ObjectId(id)) } },
+            { _id: { $in: attendeeIds.map((id: string) => new ObjectId(id)) } },
             { projection: { name: 1, email: 1 } }
           ).toArray()
         : [];
 
       return {
         ...seminar,
-        attendees: attendees
+        attendees: attendees.map((attendee: Attendee) => ({
+          ...attendee,
+          confirmed: true  // All attendees are considered confirmed for now
+        }))
       };
     }));
 

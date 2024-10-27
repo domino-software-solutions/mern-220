@@ -11,6 +11,7 @@ class Seminar {
   agentId: ObjectId;
   attendees: string[];
   invitees: string[];
+  confirmedAttendees: string[];
   createdAt: Date;
 
   constructor(data: {
@@ -24,6 +25,7 @@ class Seminar {
     agentId: string;
     attendees?: string[];
     invitees?: string[];
+    confirmedAttendees?: string[];
     createdAt?: Date;
   }) {
     this._id = data._id ? new ObjectId(data._id) : new ObjectId();
@@ -36,6 +38,7 @@ class Seminar {
     this.agentId = new ObjectId(data.agentId);
     this.attendees = data.attendees || [];
     this.invitees = data.invitees || [];
+    this.confirmedAttendees = data.confirmedAttendees || [];
     this.createdAt = data.createdAt || new Date();
   }
 }

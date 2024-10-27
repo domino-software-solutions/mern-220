@@ -14,6 +14,7 @@ interface Attendee {
   _id: string;
   name: string;
   email: string;
+  confirmed: boolean;
 }
 
 interface Seminar {
@@ -62,10 +63,13 @@ export default function AgentDashboard() {
         const data = await response.json();
         setSeminars(data);
       } else {
-        console.error('Failed to fetch seminars');
+        const errorData = await response.json();
+        console.error('Failed to fetch seminars:', errorData);
+        alert(`Failed to fetch seminars. Status: ${response.status}, Error: ${JSON.stringify(errorData)}`);
       }
     } catch (error) {
       console.error('Error fetching seminars:', error);
+      alert(`Error fetching seminars: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -142,6 +146,16 @@ export default function AgentDashboard() {
             <p>Date: {seminar.date} | Time: {seminar.time}</p>
             <p>Capacity: {seminar.capacity} | Price: ${seminar.price}</p>
             <p className="mt-2">{seminar.description}</p>
+            
+            <h4 className="font-semibold mt-4">Attendees:</h4>
+            <ul className="list-disc pl-5">
+              {seminar.attendees.map((attendee) => (
+                <li key={attendee._id} className="text-green-600">
+                  {attendee.name} ({attendee.email})
+                </li>
+              ))}
+            </ul>
+
             {seminar.qrCodeDataUrl ? (
               <div className="mt-4">
                 <h4 className="font-semibold">QR Code:</h4>
@@ -155,6 +169,7 @@ export default function AgentDashboard() {
                 Generate QR Code
               </button>
             )}
+            
             <InvitationForm
               seminarId={seminar._id}
               onSendInvitations={handleSendInvitations}

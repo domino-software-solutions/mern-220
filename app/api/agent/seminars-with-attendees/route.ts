@@ -1,7 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId, Collection } from 'mongodb';
-import { withAuth } from '@/middleware/authMiddleware';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
+export interface AuthenticatedRequest extends NextRequest {
+  user: {
+    userId: string;
+    role: string;
+  };
+}
+
+export function withAuth(
+  handler: (req: AuthenticatedRequest) => Promise<Response>,
+  allowedRoles: string[] = []
+) {
+  return async (req: NextRequest) => {
+    const token = req.cookies.get('token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
+
+      if (allowedRoles.length > 0 && !allowedRoles.includes(decoded.role)) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+      }
+
+      // Add the decoded token to the request object
+      const authenticatedReq = req as AuthenticatedRequest;
+      authenticatedReq.user = decoded;
+
+      return handler(authenticatedReq);
+    } catch (error) {
+      console.error('Error in auth middleware:', error);
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+  };
+}
 
 interface Seminar {
   _id: ObjectId;
@@ -21,7 +60,7 @@ interface Attendee {
   email: string;
 }
 
-async function handler(req: NextRequest) {
+async function handler(req: AuthenticatedRequest) {
   if (req.method !== 'GET') {
     return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
   }

@@ -35,6 +35,7 @@ export default function AgentDashboard() {
   const [seminars, setSeminars] = useState<Seminar[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [expandedQR, setExpandedQR] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -104,7 +105,6 @@ export default function AgentDashboard() {
       if (response.ok) {
         const data = await response.json();
         console.log('QR code generated:', data);
-        // Update the seminars state with the new QR code
         setSeminars(prevSeminars => prevSeminars.map(seminar => 
           seminar._id === seminarId ? { ...seminar, qrCodeDataUrl: data.qrCodeDataUrl } : seminar
         ));
@@ -124,59 +124,88 @@ export default function AgentDashboard() {
     fetchSeminars();
   };
 
+  const toggleQRCode = (seminarId: string) => {
+    setExpandedQR(expandedQR === seminarId ? null : seminarId);
+  };
+
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+    </div>;
   }
 
   return (
     <div className="container mx-auto mt-10 p-5">
-      <h1 className="text-3xl font-bold mb-5">Agent Dashboard</h1>
-      <button
-        onClick={() => setShowCreateForm(!showCreateForm)}
-        className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
-      >
-        {showCreateForm ? 'Hide Create Form' : 'Create New Seminar'}
-      </button>
-      {showCreateForm && <CreateSeminarForm onSeminarCreated={handleSeminarCreated} />}
-      <h2 className="text-2xl font-semibold mb-3">Your Seminars:</h2>
-      <ul className="list-none mb-8">
+      <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Agent Dashboard</h1>
+      <div className="mb-8">
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-4 w-full md:w-auto"
+        >
+          {showCreateForm ? 'Hide Create Form' : 'Create New Seminar'}
+        </button>
+        {showCreateForm && (
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <CreateSeminarForm onSeminarCreated={handleSeminarCreated} />
+          </div>
+        )}
+      </div>
+      <h2 className="text-3xl font-semibold mb-6 text-gray-700">Your Seminars</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {seminars.map((seminar) => (
-          <li key={seminar._id} className="border p-4 rounded mb-4">
-            <h3 className="text-xl font-semibold">{seminar.title}</h3>
-            <p>Date: {seminar.date} | Time: {seminar.time}</p>
-            <p>Capacity: {seminar.capacity} | Price: ${seminar.price}</p>
-            <p className="mt-2">{seminar.description}</p>
-            
-            <h4 className="font-semibold mt-4">Attendees:</h4>
-            <ul className="list-disc pl-5">
-              {seminar.attendees.map((attendee) => (
-                <li key={attendee._id} className="text-green-600">
-                  {attendee.name} ({attendee.email})
-                </li>
-              ))}
-            </ul>
-
-            {seminar.qrCodeDataUrl ? (
-              <div className="mt-4">
-                <h4 className="font-semibold">QR Code:</h4>
-                <Image src={seminar.qrCodeDataUrl} alt="QR Code" width={200} height={200} />
+          <div key={seminar._id} className="bg-white shadow-lg rounded-lg overflow-hidden transition duration-300 ease-in-out transform hover:scale-105 flex flex-col h-[600px]">
+            <div className="p-6 flex-grow overflow-y-auto">
+              <h3 className="text-2xl font-bold mb-2 text-gray-800 truncate">{seminar.title}</h3>
+              <div className="flex justify-between text-sm text-gray-600 mb-2">
+                <span>{seminar.date}</span>
+                <span>{seminar.time}</span>
               </div>
-            ) : (
-              <button
-                onClick={() => handleGenerateQR(seminar._id)}
-                className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
-              >
-                Generate QR Code
-              </button>
-            )}
-            
-            <InvitationForm
-              seminarId={seminar._id}
-              onSendInvitations={handleSendInvitations}
-            />
-          </li>
+              <div className="flex justify-between text-sm text-gray-600 mb-4">
+                <span>Capacity: {seminar.capacity}</span>
+                <span>Price: ${seminar.price}</span>
+              </div>
+              <p className="text-gray-700 mb-4 text-sm line-clamp-3">{seminar.description}</p>
+              
+              <h4 className="font-semibold mb-2 text-gray-800">Attendees</h4>
+              <ul className="mb-4 space-y-1 max-h-24 overflow-y-auto">
+                {seminar.attendees.map((attendee) => (
+                  <li key={attendee._id} className="text-sm text-green-600 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    {attendee.name}
+                  </li>
+                ))}
+              </ul>
+
+              {seminar.qrCodeDataUrl ? (
+                <div className="mt-4 flex justify-center">
+                  <button onClick={() => toggleQRCode(seminar._id)} className="text-blue-600 hover:text-blue-800 transition duration-300">
+                    {expandedQR === seminar._id ? 'Hide QR Code' : 'Show QR Code'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleGenerateQR(seminar._id)}
+                  className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out text-sm"
+                >
+                  Generate QR Code
+                </button>
+              )}
+
+              {expandedQR === seminar._id && seminar.qrCodeDataUrl && (
+                <div className="mt-4 flex justify-center">
+                  <Image src={seminar.qrCodeDataUrl} alt="QR Code" width={200} height={200} />
+                </div>
+              )}
+            </div>
+            <div className="p-6 mt-auto">
+              <InvitationForm
+                seminarId={seminar._id}
+                onSendInvitations={handleSendInvitations}
+              />
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
